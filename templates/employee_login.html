@@ -1,0 +1,41 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Employee Login - Geofence Attendance</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/employee_login.css') }}">
+</head>
+<body>
+    <div class="container">
+        <div class="login-card">
+            <div class="header">
+                <h2>Employee Login</h2>
+                <p class="subtitle">Sign in to access your dashboard</p>
+            </div>
+            
+            <form id="loginForm" class="login-form">
+                <div class="form-group">
+                    <label for="empId">Employee ID</label>
+                    <input type="text" id="empId" name="empId" placeholder="Enter your Employee ID" required>
+                </div>
+                <div class="form-group">
+                    <label for="empPassword">Password</label>
+                    <input type="password" id="empPassword" name="empPassword" placeholder="Enter your password" required>
+                </div>
+                <div class="form-group">
+                    <button type="submit" class="btn btn-primary">Login</button>
+                </div>
+                <div class="form-footer">
+                    <p>Don't have an account? <a href="{{ url_for('employee_signup') }}">Sign up here</a></p>
+                    <a href="{{ url_for('index') }}" class="back-link">← Back to Home</a>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <script src="{{ url_for('static', filename='js/employee_login.js') }}"></script>
+</body>
+</html>
+
+

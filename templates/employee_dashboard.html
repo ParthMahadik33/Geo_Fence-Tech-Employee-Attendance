@@ -1,0 +1,68 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Employee Dashboard - Geofence Attendance</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/employee_dashboard.css') }}">
+</head>
+<body>
+    <div class="container">
+        <div class="dashboard-card">
+            <div class="header">
+                <h2>Employee Dashboard</h2>
+                <button class="btn btn-logout" onclick="logout()">Logout</button>
+            </div>
+            
+            <div class="dashboard-content">
+                <div class="user-info">
+                    <p class="welcome-text">Welcome, <span id="employeeName">Employee</span></p>
+                </div>
+
+                <div class="status-card">
+                    <h3>Location Status</h3>
+                    <p class="status-text" id="locationStatus">Checking location...</p>
+                    <div class="status-indicator" id="statusIndicator"></div>
+                </div>
+
+                <div class="action-buttons">
+                    <button id="checkInBtn" class="btn btn-large btn-success" disabled onclick="checkIn()">
+                        <span class="icon">✓</span>
+                        Check In
+                    </button>
+                    <button id="checkOutBtn" class="btn btn-large btn-danger" disabled onclick="checkOut()">
+                        <span class="icon">✗</span>
+                        Check Out
+                    </button>
+                </div>
+
+                <div class="device-section">
+                    <div class="device-info" id="deviceInfo">
+                        <p class="device-status" id="deviceStatus">Checking device status...</p>
+                    </div>
+                    <button id="registerDeviceBtn" class="btn btn-small btn-outline" onclick="registerDevice()" style="display: none;">
+                        <span class="icon">📱</span>
+                        Register Device
+                    </button>
+                </div>
+
+                <div class="attendance-info" id="attendanceInfo" style="display: none;">
+                    <h4>Today's Attendance</h4>
+                    <div class="info-row">
+                        <span>Check In:</span>
+                        <span id="checkInTime">-</span>
+                    </div>
+                    <div class="info-row">
+                        <span>Check Out:</span>
+                        <span id="checkOutTime">-</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="{{ url_for('static', filename='js/employee_dashboard.js') }}"></script>
+</body>
+</html>
+
+

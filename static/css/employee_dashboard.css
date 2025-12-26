@@ -1,0 +1,289 @@
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+body {
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    min-height: 100vh;
+    padding: 20px;
+}
+
+.container {
+    width: 100%;
+    max-width: 600px;
+    margin: 0 auto;
+}
+
+.dashboard-card {
+    background: white;
+    border-radius: 16px;
+    padding: 40px;
+    box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+}
+
+.header {
+    text-align: center;
+    margin-bottom: 30px;
+    position: relative;
+}
+
+.header h2 {
+    color: #333;
+    font-size: 28px;
+    font-weight: 700;
+}
+
+.btn-logout {
+    position: absolute;
+    right: 0;
+    top: 0;
+    background: #f56565;
+    color: white;
+    padding: 10px 20px;
+    font-size: 14px;
+    border: none;
+    border-radius: 8px;
+    cursor: pointer;
+    font-weight: 600;
+    transition: all 0.3s ease;
+}
+
+.btn-logout:hover {
+    background: #e53e3e;
+    transform: translateY(-2px);
+}
+
+.dashboard-content {
+    display: flex;
+    flex-direction: column;
+    gap: 25px;
+}
+
+.user-info {
+    text-align: center;
+}
+
+.welcome-text {
+    color: #666;
+    font-size: 16px;
+}
+
+.welcome-text span {
+    color: #667eea;
+    font-weight: 600;
+}
+
+.status-card {
+    background: #f7fafc;
+    padding: 25px;
+    border-radius: 12px;
+    text-align: center;
+    border: 2px solid #e2e8f0;
+}
+
+.status-card h3 {
+    color: #333;
+    margin-bottom: 15px;
+    font-size: 18px;
+}
+
+.status-text {
+    color: #666;
+    font-size: 15px;
+    margin-bottom: 15px;
+    font-weight: 500;
+}
+
+.status-indicator {
+    width: 20px;
+    height: 20px;
+    border-radius: 50%;
+    margin: 0 auto;
+    background: #cbd5e0;
+    animation: pulse 2s infinite;
+}
+
+.status-indicator.active {
+    background: #48bb78;
+}
+
+.status-indicator.inactive {
+    background: #f56565;
+    animation: none;
+}
+
+@keyframes pulse {
+    0%, 100% {
+        opacity: 1;
+    }
+    50% {
+        opacity: 0.5;
+    }
+}
+
+.action-buttons {
+    display: flex;
+    flex-direction: column;
+    gap: 15px;
+}
+
+.btn {
+    padding: 18px 32px;
+    border: none;
+    border-radius: 10px;
+    font-size: 16px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 10px;
+    font-family: inherit;
+}
+
+.btn:hover:not(:disabled) {
+    transform: translateY(-3px);
+    box-shadow: 0 8px 20px rgba(0, 0, 0, 0.2);
+}
+
+.btn:active:not(:disabled) {
+    transform: translateY(-1px);
+}
+
+.btn-large {
+    padding: 20px 32px;
+    font-size: 18px;
+}
+
+.btn-success {
+    background: #48bb78;
+    color: white;
+}
+
+.btn-success:hover:not(:disabled) {
+    background: #38a169;
+}
+
+.btn-success:disabled {
+    background: #cbd5e0;
+    color: #999;
+    cursor: not-allowed;
+    transform: none;
+}
+
+.btn-danger {
+    background: #f56565;
+    color: white;
+}
+
+.btn-danger:hover:not(:disabled) {
+    background: #e53e3e;
+}
+
+.btn-danger:disabled {
+    background: #cbd5e0;
+    color: #999;
+    cursor: not-allowed;
+    transform: none;
+}
+
+.btn-outline {
+    background: white;
+    color: #667eea;
+    border: 2px solid #667eea;
+}
+
+.btn-outline:hover {
+    background: #667eea;
+    color: white;
+}
+
+.btn-small {
+    padding: 12px 24px;
+    font-size: 14px;
+}
+
+.device-section {
+    text-align: center;
+    padding-top: 10px;
+}
+
+.device-info {
+    margin-bottom: 15px;
+}
+
+.device-status {
+    color: #666;
+    font-size: 14px;
+    font-weight: 500;
+    padding: 10px;
+    background: #f7fafc;
+    border-radius: 8px;
+    display: inline-block;
+}
+
+.icon {
+    font-size: 20px;
+}
+
+.attendance-info {
+    background: #f7fafc;
+    padding: 20px;
+    border-radius: 12px;
+    border: 2px solid #e2e8f0;
+}
+
+.attendance-info h4 {
+    color: #333;
+    margin-bottom: 15px;
+    font-size: 16px;
+}
+
+.info-row {
+    display: flex;
+    justify-content: space-between;
+    padding: 8px 0;
+    border-bottom: 1px solid #e2e8f0;
+    font-size: 14px;
+}
+
+.info-row:last-child {
+    border-bottom: none;
+}
+
+.info-row span:first-child {
+    color: #666;
+    font-weight: 500;
+}
+
+.info-row span:last-child {
+    color: #333;
+    font-weight: 600;
+}
+
+@media (max-width: 640px) {
+    .dashboard-card {
+        padding: 30px 20px;
+    }
+
+    .header h2 {
+        font-size: 24px;
+    }
+
+    .btn-logout {
+        position: relative;
+        margin-bottom: 15px;
+        width: 100%;
+    }
+
+    .btn-large {
+        font-size: 16px;
+        padding: 16px 24px;
+    }
+}
+
+

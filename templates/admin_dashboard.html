@@ -1,0 +1,112 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Admin Dashboard - Geofence Attendance</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/admin_dashboard.css') }}">
+</head>
+<body>
+    <div class="container">
+        <div class="dashboard-card">
+            <div class="header">
+                <h2>Admin Dashboard</h2>
+                <button class="btn btn-logout" onclick="logout()">Logout</button>
+            </div>
+            
+            <div class="dashboard-content">
+                <div class="tabs">
+                    <button class="tab-btn active" onclick="showTab('employees')">Registered Employees</button>
+                    <button class="tab-btn" onclick="showTab('pending')">Pending Registrations</button>
+                    <button class="tab-btn" onclick="showTab('geofence')">Geofence Settings</button>
+                </div>
+
+                <div id="employeesTab" class="tab-content active">
+                    <div class="tab-header">
+                        <h3>Registered Employees</h3>
+                        <button class="btn btn-refresh" onclick="refreshEmployees()">🔄 Refresh</button>
+                    </div>
+                    <div class="table-container">
+                        <table id="employeesTable">
+                            <thead>
+                                <tr>
+                                    <th>Employee ID</th>
+                                    <th>Name</th>
+                                    <th>Email</th>
+                                    <th>Device</th>
+                                    <th>Status</th>
+                                    <th>Last Check-in</th>
+                                </tr>
+                            </thead>
+                            <tbody id="employeesTableBody">
+                                <tr>
+                                    <td colspan="6" class="empty-state">Loading employees data...</td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+
+                <div id="pendingTab" class="tab-content">
+                    <div class="tab-header">
+                        <h3>Pending Device Registrations</h3>
+                        <button class="btn btn-refresh" onclick="refreshPending()">🔄 Refresh</button>
+                    </div>
+                    <div class="table-container">
+                        <table id="pendingTable">
+                            <thead>
+                                <tr>
+                                    <th>Employee ID</th>
+                                    <th>Name</th>
+                                    <th>Device ID</th>
+                                    <th>Request Date</th>
+                                    <th>Action</th>
+                                </tr>
+                            </thead>
+                            <tbody id="pendingTableBody">
+                                <tr>
+                                    <td colspan="5" class="empty-state">No pending registrations</td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+
+                <div id="geofenceTab" class="tab-content">
+                    <div class="tab-header">
+                        <h3>Geofence Configuration</h3>
+                    </div>
+                    <div class="geofence-form-container">
+                        <form id="geofenceForm" onsubmit="updateGeofence(event)">
+                            <div class="form-group">
+                                <label for="latitude">Latitude</label>
+                                <input type="number" id="latitude" step="any" required placeholder="e.g., 28.7041">
+                                <small class="form-help">Enter latitude between -90 and 90</small>
+                            </div>
+                            <div class="form-group">
+                                <label for="longitude">Longitude</label>
+                                <input type="number" id="longitude" step="any" required placeholder="e.g., 77.1025">
+                                <small class="form-help">Enter longitude between -180 and 180</small>
+                            </div>
+                            <div class="form-group">
+                                <label for="radius">Radius (meters)</label>
+                                <input type="number" id="radius" step="any" min="1" required placeholder="e.g., 100">
+                                <small class="form-help">Enter radius in meters (minimum 1 meter)</small>
+                            </div>
+                            <div class="form-actions">
+                                <button type="submit" class="btn btn-primary">Save Configuration</button>
+                                <button type="button" class="btn btn-secondary" onclick="loadGeofenceConfig()">Reset</button>
+                            </div>
+                        </form>
+                        <div id="geofenceStatus" class="status-message"></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="{{ url_for('static', filename='js/admin_dashboard.js') }}"></script>
+</body>
+</html>
+
+

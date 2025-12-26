@@ -1,0 +1,53 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Admin Signup - Geofence Attendance</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/admin_signup.css') }}">
+</head>
+<body>
+    <div class="container">
+        <div class="signup-card">
+            <div class="header">
+                <h2>Admin Registration</h2>
+                <p class="subtitle">Create your admin account</p>
+            </div>
+            
+            <form id="signupForm" class="signup-form">
+                <div class="form-group">
+                    <label for="adminName">Full Name</label>
+                    <input type="text" id="adminName" name="adminName" placeholder="Enter your full name" required>
+                </div>
+                <div class="form-group">
+                    <label for="adminId">Admin ID</label>
+                    <input type="text" id="adminId" name="adminId" placeholder="Enter your Admin ID" required>
+                </div>
+                <div class="form-group">
+                    <label for="adminEmail">Email</label>
+                    <input type="email" id="adminEmail" name="adminEmail" placeholder="Enter your email" required>
+                </div>
+                <div class="form-group">
+                    <label for="adminPassword">Password</label>
+                    <input type="password" id="adminPassword" name="adminPassword" placeholder="Create a password" required>
+                </div>
+                <div class="form-group">
+                    <label for="adminConfirmPassword">Confirm Password</label>
+                    <input type="password" id="adminConfirmPassword" name="adminConfirmPassword" placeholder="Confirm your password" required>
+                </div>
+                <div class="form-group">
+                    <button type="submit" class="btn btn-primary">Register</button>
+                </div>
+                <div class="form-footer">
+                    <p>Already have an account? <a href="{{ url_for('admin_login') }}">Sign in here</a></p>
+                    <a href="{{ url_for('index') }}" class="back-link">← Back to Home</a>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <script src="{{ url_for('static', filename='js/admin_signup.js') }}"></script>
+</body>
+</html>
+
+

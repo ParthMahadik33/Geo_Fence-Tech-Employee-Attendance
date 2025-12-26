@@ -1,0 +1,53 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Employee Signup - Geofence Attendance</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/employee_signup.css') }}">
+</head>
+<body>
+    <div class="container">
+        <div class="signup-card">
+            <div class="header">
+                <h2>Employee Registration</h2>
+                <p class="subtitle">Create your employee account</p>
+            </div>
+            
+            <form id="signupForm" class="signup-form">
+                <div class="form-group">
+                    <label for="empName">Full Name</label>
+                    <input type="text" id="empName" name="empName" placeholder="Enter your full name" required>
+                </div>
+                <div class="form-group">
+                    <label for="empId">Employee ID</label>
+                    <input type="text" id="empId" name="empId" placeholder="Enter your Employee ID" required>
+                </div>
+                <div class="form-group">
+                    <label for="empEmail">Email</label>
+                    <input type="email" id="empEmail" name="empEmail" placeholder="Enter your email" required>
+                </div>
+                <div class="form-group">
+                    <label for="empPassword">Password</label>
+                    <input type="password" id="empPassword" name="empPassword" placeholder="Create a password" required>
+                </div>
+                <div class="form-group">
+                    <label for="empConfirmPassword">Confirm Password</label>
+                    <input type="password" id="empConfirmPassword" name="empConfirmPassword" placeholder="Confirm your password" required>
+                </div>
+                <div class="form-group">
+                    <button type="submit" class="btn btn-primary">Register</button>
+                </div>
+                <div class="form-footer">
+                    <p>Already have an account? <a href="{{ url_for('employee_login') }}">Sign in here</a></p>
+                    <a href="{{ url_for('index') }}" class="back-link">← Back to Home</a>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <script src="{{ url_for('static', filename='js/employee_signup.js') }}"></script>
+</body>
+</html>
+
+
