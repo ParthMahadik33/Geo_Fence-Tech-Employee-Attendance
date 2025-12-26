@@ -12,6 +12,7 @@ document.addEventListener('DOMContentLoaded', function() {
     
     // Load employees data
     loadEmployees();
+    loadAttendanceRecords();
     loadPendingRegistrations();
     loadGeofenceConfig();
 });
@@ -29,11 +30,15 @@ function showTab(tabName) {
     if (tabName === 'employees') {
         tabBtns[0].classList.add('active');
         document.getElementById('employeesTab').classList.add('active');
-    } else if (tabName === 'pending') {
+    } else if (tabName === 'attendance') {
         tabBtns[1].classList.add('active');
+        document.getElementById('attendanceTab').classList.add('active');
+        loadAttendanceRecords();
+    } else if (tabName === 'pending') {
+        tabBtns[2].classList.add('active');
         document.getElementById('pendingTab').classList.add('active');
     } else if (tabName === 'geofence') {
-        tabBtns[2].classList.add('active');
+        tabBtns[3].classList.add('active');
         document.getElementById('geofenceTab').classList.add('active');
         loadGeofenceConfig();
     }
@@ -181,6 +186,103 @@ function rejectDevice(registrationId) {
 // Refresh employees list
 function refreshEmployees() {
     loadEmployees();
+}
+
+// Load attendance records
+function loadAttendanceRecords() {
+    fetch('/admin/attendance-records')
+        .then(response => response.json())
+        .then(data => {
+            const tbody = document.getElementById('attendanceTableBody');
+            
+            if (data.success && data.records && data.records.length > 0) {
+                tbody.innerHTML = '';
+                data.records.forEach(record => {
+                    const row = document.createElement('tr');
+                    // Escape single quotes in strings to prevent JavaScript errors
+                    const escapedPhoto = record.photo ? record.photo.replace(/'/g, "\\'") : '';
+                    const escapedName = (record.name || '').replace(/'/g, "\\'");
+                    const photoButton = record.photo 
+                        ? `<button class="btn-action btn-view-photo" onclick="viewPhoto('${escapedPhoto}', '${escapedName}', '${record.date}', '${record.checkInTime}')">📷 View Photo</button>`
+                        : '<span class="no-photo">No photo</span>';
+                    
+                    row.innerHTML = `
+                        <td>${record.empId || 'N/A'}</td>
+                        <td>${record.name || 'N/A'}</td>
+                        <td>${record.date || 'N/A'}</td>
+                        <td>${record.checkInTime || 'N/A'}</td>
+                        <td>${record.location || 'N/A'}</td>
+                        <td>${photoButton}</td>
+                    `;
+                    tbody.appendChild(row);
+                });
+            } else {
+                tbody.innerHTML = '<tr><td colspan="6" class="empty-state">No attendance records found</td></tr>';
+            }
+        })
+        .catch(error => {
+            console.error('Error loading attendance records:', error);
+            const tbody = document.getElementById('attendanceTableBody');
+            tbody.innerHTML = '<tr><td colspan="6" class="empty-state">Error loading attendance records</td></tr>';
+        });
+}
+
+// View photo in modal
+function viewPhoto(photoPath, employeeName, date, checkInTime) {
+    const modal = document.getElementById('photoModal');
+    const photoImg = document.getElementById('photoModalImage');
+    const photoTitle = document.getElementById('photoModalTitle');
+    const photoInfo = document.getElementById('photoModalInfo');
+    
+    // Set photo source - ensure proper path format
+    // photoPath from database is like "checkin_photos/filename.jpg"
+    let imagePath = photoPath;
+    if (!photoPath.startsWith('/uploads/') && !photoPath.startsWith('http')) {
+        // Add /uploads/ prefix if not already present
+        if (!photoPath.startsWith('uploads/')) {
+            imagePath = `/uploads/${photoPath}`;
+        } else {
+            imagePath = `/${photoPath}`;
+        }
+    }
+    
+    console.log('Loading photo from:', imagePath); // Debug log
+    photoImg.src = imagePath;
+    photoImg.onerror = function() {
+        console.error('Failed to load image:', imagePath);
+        photoImg.src = ''; // Clear broken image
+        photoInfo.innerHTML = `
+            <div class="photo-info-item" style="color: #e53e3e;"><strong>Error:</strong> Photo not found</div>
+            <div class="photo-info-item"><strong>Path:</strong> ${imagePath}</div>
+            <div class="photo-info-item"><strong>Employee:</strong> ${employeeName}</div>
+            <div class="photo-info-item"><strong>Date:</strong> ${date}</div>
+            <div class="photo-info-item"><strong>Check-In Time:</strong> ${checkInTime}</div>
+        `;
+    };
+    
+    photoTitle.textContent = `Check-In Photo - ${employeeName}`;
+    photoInfo.innerHTML = `
+        <div class="photo-info-item"><strong>Employee:</strong> ${employeeName}</div>
+        <div class="photo-info-item"><strong>Date:</strong> ${date}</div>
+        <div class="photo-info-item"><strong>Check-In Time:</strong> ${checkInTime}</div>
+    `;
+    
+    // Show modal
+    modal.style.display = 'flex';
+}
+
+// Close photo modal
+function closePhotoModal(event) {
+    const modal = document.getElementById('photoModal');
+    // Only close if clicking on the backdrop, not the content
+    if (!event || event.target === modal) {
+        modal.style.display = 'none';
+    }
+}
+
+// Refresh attendance records
+function refreshAttendance() {
+    loadAttendanceRecords();
 }
 
 // Refresh pending registrations

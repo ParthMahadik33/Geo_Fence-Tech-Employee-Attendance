@@ -61,6 +61,39 @@
         </div>
     </div>
 
+    <!-- Camera Modal -->
+    <div id="cameraModal" class="camera-modal" style="display: none;">
+        <div class="camera-modal-content">
+            <div class="camera-header">
+                <h3>Check-In Photo</h3>
+                <button class="camera-close" onclick="closeCamera()">&times;</button>
+            </div>
+            <div class="camera-instructions">
+                <p class="instruction-text">📷 Please keep your face facing the camera</p>
+                <p class="instruction-subtext">Make sure your face is clearly visible and centered</p>
+            </div>
+            <div class="camera-preview-container">
+                <video id="cameraVideo" autoplay playsinline></video>
+                <canvas id="cameraCanvas" style="display: none;"></canvas>
+                <img id="capturedPhoto" style="display: none;" alt="Captured photo">
+            </div>
+            <div class="camera-controls">
+                <button id="captureBtn" class="btn btn-primary" onclick="capturePhoto()">
+                    <span class="icon">📸</span>
+                    Capture Photo
+                </button>
+                <button id="retakeBtn" class="btn btn-secondary" onclick="retakePhoto()" style="display: none;">
+                    <span class="icon">🔄</span>
+                    Retake
+                </button>
+                <button id="submitPhotoBtn" class="btn btn-success" onclick="submitCheckInWithPhoto()" style="display: none;">
+                    <span class="icon">✓</span>
+                    Confirm Check-In
+                </button>
+            </div>
+        </div>
+    </div>
+
     <script src="{{ url_for('static', filename='js/employee_dashboard.js') }}"></script>
 </body>
 </html>

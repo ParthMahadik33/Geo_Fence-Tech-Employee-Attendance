@@ -333,6 +333,130 @@ tbody tr:last-child td {
     display: block;
 }
 
+/* Photo Modal Styles */
+.photo-modal {
+    display: none;
+    position: fixed;
+    z-index: 1000;
+    left: 0;
+    top: 0;
+    width: 100%;
+    height: 100%;
+    background-color: rgba(0, 0, 0, 0.9);
+    justify-content: center;
+    align-items: center;
+    cursor: pointer;
+}
+
+.photo-modal-content {
+    background: white;
+    border-radius: 16px;
+    padding: 30px;
+    max-width: 800px;
+    width: 90%;
+    max-height: 90vh;
+    overflow-y: auto;
+    box-shadow: 0 20px 60px rgba(0, 0, 0, 0.5);
+    cursor: default;
+}
+
+.photo-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 20px;
+}
+
+.photo-header h3 {
+    color: #333;
+    font-size: 24px;
+    font-weight: 700;
+    margin: 0;
+}
+
+.photo-close {
+    background: #f56565;
+    color: white;
+    border: none;
+    border-radius: 50%;
+    width: 35px;
+    height: 35px;
+    font-size: 24px;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.3s ease;
+    line-height: 1;
+}
+
+.photo-close:hover {
+    background: #e53e3e;
+    transform: scale(1.1);
+}
+
+.photo-container {
+    width: 100%;
+    margin-bottom: 20px;
+    border-radius: 12px;
+    overflow: hidden;
+    background: #000;
+    text-align: center;
+}
+
+.photo-container img {
+    max-width: 100%;
+    max-height: 60vh;
+    height: auto;
+    display: block;
+    margin: 0 auto;
+}
+
+.photo-info {
+    background: #f7fafc;
+    padding: 15px;
+    border-radius: 8px;
+    border: 1px solid #e2e8f0;
+}
+
+.photo-info-item {
+    margin-bottom: 8px;
+    font-size: 14px;
+    color: #333;
+}
+
+.photo-info-item:last-child {
+    margin-bottom: 0;
+}
+
+.photo-info-item strong {
+    color: #764ba2;
+    margin-right: 8px;
+}
+
+.btn-view-photo {
+    background: #4299e1;
+    color: white;
+    padding: 6px 12px;
+    border: none;
+    border-radius: 6px;
+    font-size: 12px;
+    cursor: pointer;
+    font-weight: 600;
+    transition: all 0.3s ease;
+}
+
+.btn-view-photo:hover {
+    background: #3182ce;
+    transform: translateY(-1px);
+}
+
+.no-photo {
+    color: #999;
+    font-style: italic;
+    font-size: 12px;
+}
+
 @media (max-width: 768px) {
     .dashboard-card {
         padding: 30px 20px;
@@ -360,6 +484,19 @@ tbody tr:last-child td {
 
     th, td {
         padding: 10px 12px;
+    }
+
+    .photo-modal-content {
+        padding: 20px;
+        width: 95%;
+    }
+
+    .photo-header h3 {
+        font-size: 20px;
+    }
+
+    .photo-container img {
+        max-height: 50vh;
     }
 }
 

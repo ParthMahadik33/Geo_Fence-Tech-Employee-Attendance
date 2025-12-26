@@ -17,6 +17,7 @@
             <div class="dashboard-content">
                 <div class="tabs">
                     <button class="tab-btn active" onclick="showTab('employees')">Registered Employees</button>
+                    <button class="tab-btn" onclick="showTab('attendance')">Attendance Records</button>
                     <button class="tab-btn" onclick="showTab('pending')">Pending Registrations</button>
                     <button class="tab-btn" onclick="showTab('geofence')">Geofence Settings</button>
                 </div>
@@ -41,6 +42,32 @@
                             <tbody id="employeesTableBody">
                                 <tr>
                                     <td colspan="6" class="empty-state">Loading employees data...</td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+
+                <div id="attendanceTab" class="tab-content">
+                    <div class="tab-header">
+                        <h3>Attendance Records</h3>
+                        <button class="btn btn-refresh" onclick="refreshAttendance()">🔄 Refresh</button>
+                    </div>
+                    <div class="table-container">
+                        <table id="attendanceTable">
+                            <thead>
+                                <tr>
+                                    <th>Employee ID</th>
+                                    <th>Name</th>
+                                    <th>Date</th>
+                                    <th>Check-In Time</th>
+                                    <th>Location</th>
+                                    <th>Photo</th>
+                                </tr>
+                            </thead>
+                            <tbody id="attendanceTableBody">
+                                <tr>
+                                    <td colspan="6" class="empty-state">Loading attendance records...</td>
                                 </tr>
                             </tbody>
                         </table>
@@ -102,6 +129,20 @@
                     </div>
                 </div>
             </div>
+        </div>
+    </div>
+
+    <!-- Photo Viewer Modal -->
+    <div id="photoModal" class="photo-modal" style="display: none;" onclick="closePhotoModal(event)">
+        <div class="photo-modal-content" onclick="event.stopPropagation()">
+            <div class="photo-header">
+                <h3 id="photoModalTitle">Check-In Photo</h3>
+                <button class="photo-close" onclick="closePhotoModal()">&times;</button>
+            </div>
+            <div class="photo-container">
+                <img id="photoModalImage" src="" alt="Check-in photo">
+            </div>
+            <div class="photo-info" id="photoModalInfo"></div>
         </div>
     </div>
 

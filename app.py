@@ -1,9 +1,10 @@
-from flask import Flask, render_template, request, jsonify, session, redirect, url_for
+from flask import Flask, render_template, request, jsonify, session, redirect, url_for, send_from_directory
 from datetime import datetime
 import json
 import os
 import sqlite3
 from contextlib import closing
+from werkzeug.utils import secure_filename
 
 app = Flask(__name__)
 app.secret_key = 'your-secret-key-change-this-in-production'
@@ -38,9 +39,16 @@ def init_db():
                 email TEXT NOT NULL,
                 password TEXT NOT NULL,
                 device_id TEXT,
-                device_approved INTEGER DEFAULT 0
+                device_approved INTEGER DEFAULT 0,
+                device_fingerprint TEXT
             )
         ''')
+        
+        # Add device_fingerprint column if it doesn't exist (for existing databases)
+        try:
+            cursor.execute('ALTER TABLE employees ADD COLUMN device_fingerprint TEXT')
+        except sqlite3.OperationalError:
+            pass  # Column already exists
         
         # Create admins table
         cursor.execute('''
@@ -59,11 +67,18 @@ def init_db():
                 employee_id TEXT NOT NULL,
                 employee_name TEXT NOT NULL,
                 device_id TEXT NOT NULL,
+                device_fingerprint TEXT NOT NULL,
                 request_date TEXT NOT NULL,
                 status TEXT DEFAULT 'pending',
                 FOREIGN KEY (employee_id) REFERENCES employees(emp_id)
             )
         ''')
+        
+        # Add device_fingerprint column if it doesn't exist (for existing databases)
+        try:
+            cursor.execute('ALTER TABLE device_registrations ADD COLUMN device_fingerprint TEXT')
+        except sqlite3.OperationalError:
+            pass  # Column already exists
         
         # Create attendance_records table
         cursor.execute('''
@@ -74,6 +89,7 @@ def init_db():
                 check_in TEXT,
                 check_in_lat REAL,
                 check_in_lon REAL,
+                check_in_photo TEXT,
                 check_out TEXT,
                 check_out_lat REAL,
                 check_out_lon REAL,
@@ -81,6 +97,12 @@ def init_db():
                 UNIQUE(emp_id, date)
             )
         ''')
+        
+        # Add check_in_photo column if it doesn't exist (for existing databases)
+        try:
+            cursor.execute('ALTER TABLE attendance_records ADD COLUMN check_in_photo TEXT')
+        except sqlite3.OperationalError:
+            pass  # Column already exists
         
         # Create geofence_config table
         cursor.execute('''
@@ -120,26 +142,41 @@ def employee_login_post():
     data = request.get_json()
     emp_id = data.get('empId')
     password = data.get('password')
+    device_fingerprint = data.get('deviceFingerprint')
     
     # Check if employee exists and password matches
     with closing(get_db()) as conn:
         cursor = conn.cursor()
-        cursor.execute('SELECT emp_id, name, password FROM employees WHERE emp_id = ?', (emp_id,))
+        cursor.execute('SELECT emp_id, name, password, device_approved, device_fingerprint FROM employees WHERE emp_id = ?', (emp_id,))
         employee = cursor.fetchone()
         
-        if employee and employee['password'] == password:
-            session['employee_id'] = emp_id
-            session['employee_name'] = employee['name']
-            return jsonify({
-                'success': True,
-                'employeeId': emp_id,
-                'employeeName': employee['name']
-            })
-        else:
+        if not employee or employee['password'] != password:
             return jsonify({
                 'success': False,
                 'message': 'Invalid credentials'
             }), 401
+        
+        # Verify device fingerprint if device is approved
+        if employee['device_approved'] and employee['device_fingerprint']:
+            if not device_fingerprint:
+                return jsonify({
+                    'success': False,
+                    'message': 'Device fingerprint required. Please register your device first.'
+                }), 403
+            
+            if device_fingerprint != employee['device_fingerprint']:
+                return jsonify({
+                    'success': False,
+                    'message': 'Device mismatch detected. This device is not registered for this employee. Please use your registered device or contact admin.'
+                }), 403
+        
+        session['employee_id'] = emp_id
+        session['employee_name'] = employee['name']
+        return jsonify({
+            'success': True,
+            'employeeId': emp_id,
+            'employeeName': employee['name']
+        })
 
 @app.route('/employee/signup', methods=['GET'])
 def employee_signup():
@@ -184,45 +221,227 @@ def employee_dashboard():
 
 @app.route('/employee/checkin', methods=['POST'])
 def employee_checkin():
+    # Check if request contains file (photo) or JSON
+    if 'photo' in request.files:
+        # Handle photo upload
+        emp_id = request.form.get('employeeId')
+        timestamp = request.form.get('timestamp')
+        latitude = request.form.get('latitude')
+        longitude = request.form.get('longitude')
+        device_fingerprint = request.form.get('deviceFingerprint')
+        photo_file = request.files['photo']
+        
+        if not emp_id:
+            return jsonify({
+                'success': False,
+                'message': 'Employee ID is required'
+            }), 400
+        
+        # Verify device fingerprint
+        with closing(get_db()) as conn:
+            cursor = conn.cursor()
+            cursor.execute('SELECT device_approved, device_fingerprint FROM employees WHERE emp_id = ?', (emp_id,))
+            employee = cursor.fetchone()
+            
+            if employee and employee['device_approved'] and employee['device_fingerprint']:
+                if not device_fingerprint:
+                    return jsonify({
+                        'success': False,
+                        'message': 'Device fingerprint required for check-in'
+                    }), 403
+                
+                if device_fingerprint != employee['device_fingerprint']:
+                    return jsonify({
+                        'success': False,
+                        'message': 'Device mismatch detected. Check-in denied. Please use your registered device.'
+                    }), 403
+        
+        # Create uploads directory if it doesn't exist
+        upload_dir = os.path.join('static', 'uploads', 'checkin_photos')
+        os.makedirs(upload_dir, exist_ok=True)
+        
+        # Generate unique filename
+        today = datetime.now().strftime('%Y-%m-%d')
+        filename = f"{emp_id}_{today}_{datetime.now().strftime('%H%M%S')}.jpg"
+        filename = secure_filename(filename)
+        photo_path = os.path.join(upload_dir, filename)
+        
+        # Save photo
+        photo_file.save(photo_path)
+        
+        # Store relative path for web access (without leading slash)
+        photo_relative_path = os.path.join('checkin_photos', filename).replace('\\', '/')
+        
+        # Use server timestamp for accuracy (more reliable than client timestamp)
+        server_timestamp = datetime.now().isoformat()
+        
+        # Store check-in record with photo
+        with closing(get_db()) as conn:
+            cursor = conn.cursor()
+            # Check if record exists for today
+            cursor.execute('SELECT id FROM attendance_records WHERE emp_id = ? AND date = ?', (emp_id, today))
+            existing = cursor.fetchone()
+            
+            if existing:
+                # Update existing record
+                cursor.execute('''
+                    UPDATE attendance_records 
+                    SET check_in = ?, check_in_lat = ?, check_in_lon = ?, check_in_photo = ?
+                    WHERE emp_id = ? AND date = ?
+                ''', (server_timestamp, latitude, longitude, photo_relative_path, emp_id, today))
+            else:
+                # Insert new record
+                cursor.execute('''
+                    INSERT INTO attendance_records (emp_id, date, check_in, check_in_lat, check_in_lon, check_in_photo)
+                    VALUES (?, ?, ?, ?, ?, ?)
+                ''', (emp_id, today, server_timestamp, latitude, longitude, photo_relative_path))
+            conn.commit()
+        
+        return jsonify({
+            'success': True,
+            'message': 'Check-in recorded successfully with photo',
+            'timestamp': server_timestamp  # Return server timestamp for accurate display
+        })
+    else:
+        # Handle JSON request (backward compatibility)
+        data = request.get_json()
+        emp_id = data.get('employeeId')
+        device_fingerprint = data.get('deviceFingerprint')
+        
+        # Verify device fingerprint
+        with closing(get_db()) as conn:
+            cursor = conn.cursor()
+            cursor.execute('SELECT device_approved, device_fingerprint FROM employees WHERE emp_id = ?', (emp_id,))
+            employee = cursor.fetchone()
+            
+            if employee and employee['device_approved'] and employee['device_fingerprint']:
+                if not device_fingerprint:
+                    return jsonify({
+                        'success': False,
+                        'message': 'Device fingerprint required for check-in'
+                    }), 403
+                
+                if device_fingerprint != employee['device_fingerprint']:
+                    return jsonify({
+                        'success': False,
+                        'message': 'Device mismatch detected. Check-in denied. Please use your registered device.'
+                    }), 403
+        
+        # Store check-in record
+        today = datetime.now().strftime('%Y-%m-%d')
+        # Use server timestamp for accuracy
+        server_timestamp = datetime.now().isoformat()
+        latitude = data.get('latitude')
+        longitude = data.get('longitude')
+        
+        with closing(get_db()) as conn:
+            cursor = conn.cursor()
+            # Check if record exists for today
+            cursor.execute('SELECT id FROM attendance_records WHERE emp_id = ? AND date = ?', (emp_id, today))
+            existing = cursor.fetchone()
+            
+            if existing:
+                # Update existing record
+                cursor.execute('''
+                    UPDATE attendance_records 
+                    SET check_in = ?, check_in_lat = ?, check_in_lon = ?
+                    WHERE emp_id = ? AND date = ?
+                ''', (server_timestamp, latitude, longitude, emp_id, today))
+            else:
+                # Insert new record
+                cursor.execute('''
+                    INSERT INTO attendance_records (emp_id, date, check_in, check_in_lat, check_in_lon)
+                    VALUES (?, ?, ?, ?, ?)
+                ''', (emp_id, today, server_timestamp, latitude, longitude))
+            conn.commit()
+        
+        return jsonify({
+            'success': True,
+            'message': 'Check-in recorded successfully',
+            'timestamp': server_timestamp  # Return server timestamp for accurate display
+        })
+
+@app.route('/employee/checkout', methods=['POST'])
+def employee_checkout():
     data = request.get_json()
     emp_id = data.get('employeeId')
+    device_fingerprint = data.get('deviceFingerprint')
     
-    # Store check-in record
-    today = datetime.now().strftime('%Y-%m-%d')
-    timestamp = data.get('timestamp')
-    latitude = data.get('latitude')
-    longitude = data.get('longitude')
+    if not emp_id:
+        return jsonify({
+            'success': False,
+            'message': 'Employee ID is required'
+        }), 400
     
+    # Verify device fingerprint
     with closing(get_db()) as conn:
         cursor = conn.cursor()
-        # Check if record exists for today
-        cursor.execute('SELECT id FROM attendance_records WHERE emp_id = ? AND date = ?', (emp_id, today))
-        existing = cursor.fetchone()
+        cursor.execute('SELECT device_approved, device_fingerprint FROM employees WHERE emp_id = ?', (emp_id,))
+        employee = cursor.fetchone()
         
-        if existing:
-            # Update existing record
-            cursor.execute('''
-                UPDATE attendance_records 
-                SET check_in = ?, check_in_lat = ?, check_in_lon = ?
-                WHERE emp_id = ? AND date = ?
-            ''', (timestamp, latitude, longitude, emp_id, today))
-        else:
-            # Insert new record
-            cursor.execute('''
-                INSERT INTO attendance_records (emp_id, date, check_in, check_in_lat, check_in_lon)
-                VALUES (?, ?, ?, ?, ?)
-            ''', (emp_id, today, timestamp, latitude, longitude))
+        if employee and employee['device_approved'] and employee['device_fingerprint']:
+            if not device_fingerprint:
+                return jsonify({
+                    'success': False,
+                    'message': 'Device fingerprint required for check-out'
+                }), 403
+            
+            if device_fingerprint != employee['device_fingerprint']:
+                return jsonify({
+                    'success': False,
+                    'message': 'Device mismatch detected. Check-out denied. Please use your registered device.'
+                }), 403
+        
+        # Check if employee has checked in today
+        today = datetime.now().strftime('%Y-%m-%d')
+        cursor.execute('SELECT id, check_in FROM attendance_records WHERE emp_id = ? AND date = ?', (emp_id, today))
+        record = cursor.fetchone()
+        
+        if not record or not record['check_in']:
+            return jsonify({
+                'success': False,
+                'message': 'You must check in first before checking out'
+            }), 400
+        
+        # Check if already checked out
+        cursor.execute('SELECT check_out FROM attendance_records WHERE emp_id = ? AND date = ?', (emp_id, today))
+        existing_checkout = cursor.fetchone()
+        if existing_checkout and existing_checkout['check_out']:
+            return jsonify({
+                'success': False,
+                'message': 'You have already checked out today'
+            }), 400
+        
+        # Use server timestamp for accuracy
+        server_timestamp = datetime.now().isoformat()
+        latitude = data.get('latitude')
+        longitude = data.get('longitude')
+        
+        # Update attendance record with check-out
+        cursor.execute('''
+            UPDATE attendance_records 
+            SET check_out = ?, check_out_lat = ?, check_out_lon = ?
+            WHERE emp_id = ? AND date = ?
+        ''', (server_timestamp, latitude, longitude, emp_id, today))
         conn.commit()
     
     return jsonify({
         'success': True,
-        'message': 'Check-in recorded successfully'
+        'message': 'Check-out recorded successfully',
+        'timestamp': server_timestamp  # Return server timestamp for accurate display
     })
 
 @app.route('/employee/register-device', methods=['POST'])
 def employee_register_device():
     data = request.get_json()
     emp_id = data.get('employeeId')
+    device_fingerprint = data.get('deviceFingerprint')
+    
+    if not device_fingerprint:
+        return jsonify({
+            'success': False,
+            'message': 'Device fingerprint is required'
+        }), 400
     
     # Generate device ID
     device_id = f"Device-{emp_id}-{datetime.now().strftime('%Y%m%d%H%M%S')}"
@@ -238,11 +457,11 @@ def employee_register_device():
         employee = cursor.fetchone()
         employee_name = employee['name'] if employee else 'Unknown'
         
-        # Insert registration request
+        # Insert registration request with fingerprint
         cursor.execute('''
-            INSERT INTO device_registrations (reg_id, employee_id, employee_name, device_id, request_date, status)
-            VALUES (?, ?, ?, ?, ?, ?)
-        ''', (reg_id, emp_id, employee_name, device_id, request_date, 'pending'))
+            INSERT INTO device_registrations (reg_id, employee_id, employee_name, device_id, device_fingerprint, request_date, status)
+            VALUES (?, ?, ?, ?, ?, ?, ?)
+        ''', (reg_id, emp_id, employee_name, device_id, device_fingerprint, request_date, 'pending'))
         conn.commit()
     
     return jsonify({
@@ -394,6 +613,65 @@ def admin_employees():
         'employees': employees_list
     })
 
+@app.route('/admin/attendance-records')
+def admin_attendance_records():
+    """Get all attendance records with photos"""
+    with closing(get_db()) as conn:
+        cursor = conn.cursor()
+        cursor.execute('''
+            SELECT a.emp_id, e.name, a.date, a.check_in, a.check_in_lat, a.check_in_lon, a.check_in_photo
+            FROM attendance_records a
+            JOIN employees e ON a.emp_id = e.emp_id
+            WHERE a.check_in IS NOT NULL
+            ORDER BY a.date DESC, a.check_in DESC
+            LIMIT 100
+        ''')
+        records = cursor.fetchall()
+        
+        attendance_list = []
+        for record in records:
+            check_in_time = 'N/A'
+            if record['check_in']:
+                try:
+                    checkin_datetime = datetime.fromisoformat(record['check_in'])
+                    check_in_time = checkin_datetime.strftime('%I:%M:%S %p')
+                except:
+                    check_in_time = 'N/A'
+            
+            location = 'N/A'
+            if record['check_in_lat'] and record['check_in_lon']:
+                location = f"{record['check_in_lat']:.6f}, {record['check_in_lon']:.6f}"
+            
+            attendance_list.append({
+                'empId': record['emp_id'],
+                'name': record['name'],
+                'date': record['date'],
+                'checkInTime': check_in_time,
+                'location': location,
+                'photo': record['check_in_photo'] if record['check_in_photo'] else None
+            })
+    
+    return jsonify({
+        'success': True,
+        'records': attendance_list
+    })
+
+@app.route('/uploads/<path:filename>')
+def serve_photo(filename):
+    """Serve uploaded photos from static/uploads directory"""
+    try:
+        # Handle subdirectory paths like 'checkin_photos/filename.jpg'
+        upload_dir = os.path.join('static', 'uploads')
+        # Normalize the path and ensure it's safe
+        safe_path = os.path.normpath(filename).replace('\\', '/')
+        # Prevent directory traversal
+        if '..' in safe_path or safe_path.startswith('/'):
+            return jsonify({'error': 'Invalid path'}), 400
+        return send_from_directory(upload_dir, safe_path)
+    except Exception as e:
+        app.logger.error(f'Error serving photo {filename}: {str(e)}')
+        return jsonify({'error': 'Photo not found', 'message': str(e)}), 404
+
 @app.route('/admin/pending-registrations')
 def admin_pending_registrations():
     # Get all pending device registrations
@@ -426,8 +704,8 @@ def admin_pending_registrations():
 def admin_approve_device(reg_id):
     with closing(get_db()) as conn:
         cursor = conn.cursor()
-        # Check if registration exists
-        cursor.execute('SELECT employee_id, device_id FROM device_registrations WHERE reg_id = ?', (reg_id,))
+        # Check if registration exists and get fingerprint
+        cursor.execute('SELECT employee_id, device_id, device_fingerprint FROM device_registrations WHERE reg_id = ?', (reg_id,))
         reg_data = cursor.fetchone()
         
         if not reg_data:
@@ -438,13 +716,14 @@ def admin_approve_device(reg_id):
         
         emp_id = reg_data['employee_id']
         device_id = reg_data['device_id']
+        device_fingerprint = reg_data['device_fingerprint']
         
-        # Update employee device info
+        # Update employee device info with fingerprint
         cursor.execute('''
             UPDATE employees 
-            SET device_id = ?, device_approved = 1
+            SET device_id = ?, device_approved = 1, device_fingerprint = ?
             WHERE emp_id = ?
-        ''', (device_id, emp_id))
+        ''', (device_id, device_fingerprint, emp_id))
         
         # Update registration status
         cursor.execute('''
